@@ -1,1 +1,563 @@
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local ProximityPromptService = game:GetService("ProximityPromptService")
+local CoreGui = game:GetService("CoreGui")
+local TextChatService = game:GetService("TextChatService")
 
+local player = Players.LocalPlayer
+
+local pos1 = Vector3.new(-352.98, -7, 74.30)
+local pos2 = Vector3.new(-352.98, -6.49, 45.76)
+
+local spot1_sequence = {
+CFrame.new(-370.810913, -7.00000334, 41.2687263, 0.99984771, 1.22364419e-09, 0.0174523517, -6.54859778e-10, 1, -3.2596418e-08, -0.0174523517, 3.25800258e-08, 0.99984771),
+CFrame.new(-336.355286, -5.10107088, 17.2327671, -0.999883354, -2.76150569e-08, 0.0152716246, -2.88224964e-08, 1, -7.88441525e-08, -0.0152716246, -7.9275118e-08, -0.999883354)
+}
+
+local spot2_sequence = {
+CFrame.new(-354.782867, -7.00000334, 92.8209305, -0.999997616, -1.11891862e-09, -0.00218066527, -1.11958298e-09, 1, 3.03415071e-10, 0.00218066527, 3.05855785e-10, -0.999997616),
+CFrame.new(-336.942902, -5.10106993, 99.3276443, 0.999914348, -3.63984611e-08, 0.0130875716, 3.67094941e-08, 1, -2.35254749e-08, -0.0130875716, 2.40038975e-08, 0.999914348)
+}
+
+-- Variables for Toggles
+local autoAPOnSteal = false
+
+-- ESP Logic
+local function createESPBox(position, labelText)
+    local espFolder = Instance.new("Folder")
+    espFolder.Name = "ESPBox_" .. labelText
+    espFolder.Parent = workspace
+    
+    local box = Instance.new("Part")
+    box.Name = "ESPPart"
+    box.Size = Vector3.new(5, 0.5, 5)
+    box.Position = position
+    box.Anchored = true
+    box.CanCollide = false
+    box.Transparency = 0.5
+    box.Material = Enum.Material.Neon
+    box.Color = Color3.fromRGB(255, 0, 0)
+    box.Parent = espFolder
+    
+    local selectionBox = Instance.new("SelectionBox")
+    selectionBox.Adornee = box
+    selectionBox.LineThickness = 0.05
+    selectionBox.Color3 = Color3.fromRGB(255, 0, 0)
+    selectionBox.Parent = box
+    
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "ESPLabel"
+    billboard.Adornee = box
+    billboard.Size = UDim2.new(0, 150, 0, 40)
+    billboard.StudsOffset = Vector3.new(0, 2, 0)
+    billboard.AlwaysOnTop = true
+    billboard.Parent = box
+    
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(1, 0, 1, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = labelText
+    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    textLabel.TextSize = 18
+    textLabel.Font = Enum.Font.GothamBold
+    textLabel.TextStrokeTransparency = 0.5
+    textLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    textLabel.Parent = billboard
+    return espFolder 
+end
+
+createESPBox(Vector3.new(-349.32, -7, 95), "Auto tp Left")
+createESPBox(Vector3.new(-349.56, -7, 27), "Auto tp Right")
+
+-- Physics Flags
+local function ResetToWork()
+    local flags = {
+        {"GameNetPVHeaderRotationalVelocityZeroCutoffExponent", "-5000"},
+        {"LargeReplicatorWrite5", "true"},
+        {"LargeReplicatorEnabled9", "true"},
+        {"AngularVelociryLimit", "360"},
+        {"TimestepArbiterVelocityCriteriaThresholdTwoDt", "2147483646"},
+        {"S2PhysicsSenderRate", "15000"},
+        {"DisableDPIScale", "true"},
+        {"MaxDataPacketPerSend", "2147483647"},
+        {"ServerMaxBandwith", "52"},
+        {"PhysicsSenderMaxBandwidthBps", "20000"},
+        {"MaxTimestepMultiplierBuoyancy", "2147483647"},
+        {"SimOwnedNOUCountThresholdMillionth", "2147483647"},
+        {"MaxMissedWorldStepsRemembered", "-2147483648"},
+        {"CheckPVDifferencesForInterpolationMinVelThresholdStudsPerSecHundredth", "1"},
+        {"StreamJobNOUVolumeLengthCap", "2147483647"},
+        {"DebugSendDistInSteps", "-2147483648"},
+        {"MaxTimestepMultiplierAcceleration", "2147483647"},
+        {"LargeReplicatorRead5", "true"},
+        {"SimExplicitlyCappedTimestepMultiplier", "2147483646"},
+        {"GameNetDontSendRedundantNumTimes", "1"},
+        {"CheckPVLinearVelocityIntegrateVsDeltaPositionThresholdPercent", "1"},
+        {"CheckPVCachedRotVelThresholdPercent", "10"},
+        {"LargeReplicatorSerializeRead3", "true"},
+        {"ReplicationFocusNouExtentsSizeCutoffForPauseStuds", "2147483647"},
+        {"NextGenReplicatorEnabledWrite4", "true"},
+        {"CheckPVDifferencesForInterpolationMinRotVelThresholdRadsPerSecHundredth", "1"},
+        {"GameNetDontSendRedundantDeltaPositionMillionth", "1"},
+        {"InterpolationFrameVelocityThresholdMillionth", "5"},
+        {"StreamJobNOUVolumeCap", "2147483647"},
+        {"InterpolationFrameRotVelocityThresholdMillionth", "5"},
+        {"WorldStepMax", "30"},
+        {"TimestepArbiterHumanoidLinearVelThreshold", "1"},
+        {"InterpolationFramePositionThresholdMillionth", "5"},
+        {"TimestepArbiterHumanoidTurningVelThreshold", "1"},
+        {"MaxTimestepMultiplierContstraint", "2147483647"},
+        {"GameNetPVHeaderLinearVelocityZeroCutoffExponent", "-5000"},
+        {"CheckPVCachedVelThresholdPercent", "10"},
+        {"TimestepArbiterOmegaThou", "1073741823"},
+        {"MaxAcceptableUpdateDelay", "1"},
+        {"LargeReplicatorSerializeWrite4", "true"},
+    }
+    for _, data in ipairs(flags) do
+        pcall(function() if setfflag then setfflag(data[1], data[2]) end end)
+    end
+    local char = player.Character
+    if char then
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then hum:ChangeState(Enum.HumanoidStateType.Dead) end
+        char:ClearAllChildren()
+        local f = Instance.new("Model", workspace)
+        player.Character = f task.wait()
+        player.Character = char f:Destroy()
+    end
+end
+
+if CoreGui:FindFirstChild("SilentHubGui") then CoreGui["SilentHubGui"]:Destroy() end
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "SilentHubGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = CoreGui
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 190, 0, 420)
+mainFrame.Position = UDim2.new(1, -205, 0.5, -170)
+mainFrame.AnchorPoint = Vector2.new(0, 0.5)
+mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+mainFrame.BackgroundTransparency = 0.1
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Parent = screenGui
+
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 8)
+local borderStroke = Instance.new("UIStroke", mainFrame)
+borderStroke.Thickness = 2
+borderStroke.Color = Color3.fromRGB(255, 50, 50)
+borderStroke.Transparency = 0.3
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 23)
+title.Position = UDim2.new(0, 0, 0, 5)
+title.BackgroundTransparency = 1
+title.Text = "NOVA TRADES SEMI TP"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextSize = 13
+title.Font = Enum.Font.GothamBlack
+title.Parent = mainFrame
+
+local semiTPEnabled = false
+local IsStealing = false
+local StealProgress = 0
+
+local function getHRP()
+    local char = player.Character
+    return char and (char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("UpperTorso"))
+end
+
+-- AP Spam Logic (Nearest Player)
+local function getNearestPlayer()
+    local char = player.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return nil end
+
+    local nearest, distance = nil, math.huge 
+    for _, p in ipairs(Players:GetPlayers()) do 
+        if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then 
+            local mag = (char.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude 
+            if mag < distance then 
+                distance = mag 
+                nearest = p 
+            end 
+        end 
+    end 
+    return nearest 
+end
+
+local function spamAPNearest()
+    local target = getNearestPlayer()
+    if not target then return end
+
+    if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then 
+        local channel = TextChatService.TextChannels:WaitForChild("RBXGeneral") 
+        local commands = { 
+            ";rocket ",   -- First
+            ";ragdoll ",  -- Second
+            ";jumpscare ", 
+            ";morph ", 
+            "tiny ", 
+            ";inverse ", 
+            ";nightvision "
+        } 
+
+        for _, cmd in ipairs(commands) do 
+            pcall(function() 
+                channel:SendAsync(cmd .. target.Name) 
+            end) 
+            task.wait(0.1) 
+        end 
+    end 
+end
+
+local function executeSteal(seq)
+    if IsStealing then return end
+    local hrp = getHRP()
+    if not hrp then return end
+    local plots = workspace:FindFirstChild("Plots")
+    if not plots then return end
+    
+    local nearestPrompt, minDist = nil, 200
+    for _, plot in ipairs(plots:GetChildren()) do
+        local sign = plot:FindFirstChild("PlotSign")
+        if not (sign and sign:FindFirstChild("YourBase") and sign.YourBase.Enabled) then
+            local pds = plot:FindFirstChild("AnimalPodiums")
+            if pds then
+                for _, pod in ipairs(pds:GetChildren()) do
+                    if pod:FindFirstChild("Base") then
+                        local prompt = pod.Base.Spawn.PromptAttachment:FindFirstChildOfClass("ProximityPrompt")
+                        local d = (hrp.Position - pod:GetPivot().Position).Magnitude
+                        if d < minDist then minDist = d nearestPrompt = prompt end
+                    end
+                end
+            end
+        end
+    end
+
+    if not nearestPrompt then return end
+    IsStealing = true
+    local tpDone = false
+    task.spawn(function()
+        local start = tick()
+        while tick() - start < 1.3 do
+            StealProgress = (tick() - start) / 1.3
+            if StealProgress >= 0.73 and not tpDone then
+                tpDone = true
+                local char = player.Character
+                local bp = player:FindFirstChild("Backpack")
+                if char and bp then
+                    local cp = bp:FindFirstChild("Flying Carpet") or char:FindFirstChild("Flying Carpet")
+                    if cp then char:FindFirstChildOfClass("Humanoid"):EquipTool(cp) task.wait(0.05) end
+                end
+                local hrp2 = getHRP()
+                if hrp2 then
+                    hrp2.CFrame = seq[1]
+                    task.wait(0.1)
+                    hrp2.CFrame = seq[2]
+                    
+                    if autoAPOnSteal then
+                        task.spawn(spamAPNearest)
+                    end
+                    
+                    task.wait(0.2)
+                    local d1 = (hrp2.Position - pos1).Magnitude
+                    local d2 = (hrp2.Position - pos2).Magnitude
+                    hrp2.CFrame = CFrame.new(d1 < d2 and pos1 or pos2)
+                end
+            end
+            task.wait()
+        end
+        fireproximityprompt(nearestPrompt)
+        task.wait(0.2)
+        IsStealing = false
+        StealProgress = 0
+    end)
+end
+
+local function createBigButton(text, pos, color, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.9, 0, 0, 40)
+    btn.Position = pos
+    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 12
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    btn.Parent = mainFrame
+    
+    local padding = Instance.new("UIPadding", btn)
+    padding.PaddingLeft = UDim.new(0, 10)
+    Instance.new("UICorner", btn)
+    local stroke = Instance.new("UIStroke", btn)
+    stroke.Color = color
+    stroke.Thickness = 2
+    
+    local bindLabel = Instance.new("TextButton")
+    bindLabel.Size = UDim2.new(0, 65, 0, 24)
+    bindLabel.Position = UDim2.new(1, -70, 0.5, -12)
+    bindLabel.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    bindLabel.Text = "[None]"
+    bindLabel.TextColor3 = color
+    bindLabel.TextSize = 11
+    bindLabel.Font = Enum.Font.GothamBold
+    bindLabel.Parent = btn
+    Instance.new("UICorner", bindLabel)
+
+    local currentBind = nil
+    local listening = false
+    
+    bindLabel.MouseButton1Click:Connect(function()
+        listening = true
+        bindLabel.Text = "..."
+    end)
+    
+    UserInputService.InputBegan:Connect(function(input)
+        if listening and input.UserInputType == Enum.UserInputType.Keyboard then
+            currentBind = input.KeyCode
+            bindLabel.Text = "[" .. input.KeyCode.Name .. "]"
+            listening = false
+        elseif not listening and currentBind and input.KeyCode == currentBind then
+            callback()
+        end
+    end)
+    btn.MouseButton1Click:Connect(callback)
+end
+
+-- Toggles (Half TP)
+local hCont = Instance.new("Frame")
+hCont.Size = UDim2.new(0.9, 0, 0, 40)
+hCont.Position = UDim2.new(0.05, 0, 0, 40)
+hCont.BackgroundTransparency = 1
+hCont.Parent = mainFrame
+local hl = Instance.new("TextLabel")
+hl.Size = UDim2.new(1, -50, 1, 0)
+hl.BackgroundTransparency = 1
+hl.Text = "Half Tp"
+hl.TextColor3 = Color3.fromRGB(255, 255, 255)
+hl.Font = Enum.Font.GothamBold
+hl.TextSize = 14
+hl.TextXAlignment = Enum.TextXAlignment.Left
+hl.Parent = hCont
+local hBtn = Instance.new("TextButton")
+hBtn.Size = UDim2.new(0, 45, 0, 24)
+hBtn.Position = UDim2.new(1, -45, 0.5, -12)
+hBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+hBtn.Text = ""
+hBtn.Parent = hCont
+local hDot = Instance.new("Frame")
+hDot.Size = UDim2.new(0, 20, 0, 20)
+hDot.Position = UDim2.new(0, 2, 0.5, -10)
+hDot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+hDot.Parent = hBtn
+Instance.new("UICorner", hBtn).CornerRadius = UDim.new(1,0)
+Instance.new("UICorner", hDot).CornerRadius = UDim.new(1,0)
+
+hBtn.MouseButton1Click:Connect(function()
+    semiTPEnabled = not semiTPEnabled
+    local goal = semiTPEnabled and UDim2.new(1, -22, 0.5, -10) or UDim2.new(0, 2, 0.5, -10)
+    local col = semiTPEnabled and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(40, 40, 40)
+    TweenService:Create(hDot, TweenInfo.new(0.15), {Position = goal}):Play()
+    TweenService:Create(hBtn, TweenInfo.new(0.15), {BackgroundColor3 = col}):Play()
+end)
+
+createBigButton("Auto tp Left", UDim2.new(0.05, 0, 0, 85), Color3.fromRGB(255, 50, 50), function() executeSteal(spot1_sequence) end)
+createBigButton("Auto tp Right", UDim2.new(0.05, 0, 0, 130), Color3.fromRGB(255, 200, 0), function() executeSteal(spot2_sequence) end)
+
+local bar = Instance.new("Frame")
+bar.Size = UDim2.new(0.9, 0, 0, 12)
+bar.Position = UDim2.new(0.05, 0, 0, 180)
+bar.BackgroundColor3 = Color3.fromRGB(25,25,25)
+bar.Parent = mainFrame
+local fill = Instance.new("Frame")
+fill.Size = UDim2.new(0,0,1,0)
+fill.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+fill.Parent = bar
+Instance.new("UICorner", bar)
+Instance.new("UICorner", fill)
+
+task.spawn(function() while task.wait() do fill.Size = UDim2.new(math.clamp(StealProgress, 0, 1), 0, 1, 0) end end)
+
+local spam = Instance.new("TextButton")
+spam.Size = UDim2.new(0.9, 0, 0, 30)
+spam.Position = UDim2.new(0.05, 0, 0, 200)
+spam.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+spam.Text = "SPAM AP NEAREST"
+spam.Font = Enum.Font.GothamBold
+spam.TextColor3 = Color3.fromRGB(255,255,255)
+spam.TextSize = 10
+spam.Parent = mainFrame
+Instance.new("UICorner", spam)
+Instance.new("UIStroke", spam).Color = Color3.fromRGB(255, 50, 50)
+spam.MouseButton1Click:Connect(spamAPNearest)
+
+local discordBtn = Instance.new("TextButton")
+discordBtn.Size = UDim2.new(0.9, 0, 0, 40)
+discordBtn.Position = UDim2.new(0.05, 0, 0, 240)
+discordBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
+discordBtn.Text = "JOIN DISCORD"
+discordBtn.Font = Enum.Font.GothamBlack
+discordBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+discordBtn.TextSize = 12
+discordBtn.Parent = mainFrame
+Instance.new("UICorner", discordBtn)
+
+discordBtn.MouseButton1Click:Connect(function()
+    setclipboard("https://discord.gg/Te8Yh5rUen")
+    discordBtn.Text = "COPIED LINK!"
+    task.wait(2)
+    discordBtn.Text = "JOIN DISCORD"
+end)
+
+-- AUTO AP ON STEAL BUTTON
+local autoApCont = Instance.new("Frame")
+autoApCont.Size = UDim2.new(0.9, 0, 0, 40)
+autoApCont.Position = UDim2.new(0.05, 0, 0, 290)
+autoApCont.BackgroundTransparency = 1
+autoApCont.Parent = mainFrame
+
+local apText = Instance.new("TextLabel")
+apText.Size = UDim2.new(1, -50, 1, 0)
+apText.BackgroundTransparency = 1
+apText.Text = "Auto AP on Steal"
+apText.TextColor3 = Color3.fromRGB(255, 255, 255)
+apText.Font = Enum.Font.GothamBold
+apText.TextSize = 12
+apText.TextXAlignment = Enum.TextXAlignment.Left
+apText.Parent = autoApCont
+
+local apToggleBtn = Instance.new("TextButton")
+apToggleBtn.Size = UDim2.new(0, 45, 0, 24)
+apToggleBtn.Position = UDim2.new(1, -45, 0.5, -12)
+apToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+apToggleBtn.Text = ""
+apToggleBtn.Parent = autoApCont
+Instance.new("UICorner", apToggleBtn).CornerRadius = UDim.new(1,0)
+
+local apDot = Instance.new("Frame")
+apDot.Size = UDim2.new(0, 20, 0, 20)
+apDot.Position = UDim2.new(0, 2, 0.5, -10)
+apDot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+apDot.Parent = apToggleBtn
+Instance.new("UICorner", apDot).CornerRadius = UDim.new(1,0)
+
+apToggleBtn.MouseButton1Click:Connect(function()
+    autoAPOnSteal = not autoAPOnSteal
+    local goal = autoAPOnSteal and UDim2.new(1, -22, 0.5, -10) or UDim2.new(0, 2, 0.5, -10)
+    local col = autoAPOnSteal and Color3.fromRGB(0, 255, 100) or Color3.fromRGB(40, 40, 40)
+    TweenService:Create(apDot, TweenInfo.new(0.15), {Position = goal}):Play()
+    TweenService:Create(apToggleBtn, TweenInfo.new(0.15), {BackgroundColor3 = col}):Play()
+end)
+
+-- Mobile/PC Dragging
+local dragging, dragInput, dragStart, startPos
+mainFrame.InputBegan:Connect(function(input)
+    if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
+    end
+end)
+mainFrame.InputChanged:Connect(function(input)
+    if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        dragInput = input
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+task.spawn(ResetToWork)
+
+-- Whitelist (One per line)
+local Whitelist = {
+    "murph1211",
+    "Ponkey23241",
+    "LoL_magnum1",
+    "FrostyFrost_ieatglue",
+    "josegonzalesgonzales",
+    "gerifortnitefan",
+    "murph1211alt1",
+    "dontCallmedadbabygr1",
+    "24k_Jorddy",
+    "lkreserva5",
+    "Abbasm630",
+    "Lavagamer10758",
+    "Mclovinondat",
+    "Your_wifibum",
+    "Am4n_az",
+    "AltamimiX",
+    "Best_Pro06",
+    "Zeldrix_51",
+    "Noahm172",
+    "Ajaim170",
+    "sezotp",
+    "Ajaim172",
+    "stinkyboy1678",
+    "El_vieji4",
+    "uzishells",
+    "jbalt225",
+    "JOJOMAMAMAMdvdv",
+    "sab_davidbarosand",
+    "barryphooo",
+    "TRK_Savx",
+    "cutzoned",
+    "Baconduddy2",
+    "whatyoulookinathu_9",
+    "MuckyMayo",
+    "USERCREATED",
+    "Ryz3nStorage",
+    "Shsjsj3883",
+    "lirilalala6",
+    "uonarcs",
+    "Mvcross12345",
+    "6lpzi",
+    "secerttaker",
+    "Bukeylukey",
+    "stinkyboy1678",
+    "EliteYasharal",
+    "Bethpine25",
+    "iloverobloxxbox1s",
+    "MCLOVInOnDAT",
+    "Aesss192",
+    "UrbanGhostX4",
+    "FullyJayy",
+    "fortn1t3x91",
+    "HauntedCheezBurgerr",
+    "AltamimiX",
+    "JaydenPires000",
+    "jhenriique015",
+    "Deinechaiya",
+    "juiceman0712805",
+    "rditachii",
+    "imbaz1",
+    "yeyeyey366",
+    "fortnitepro098721",
+    "xcrxptz",
+    "kmdreaper",
+    "Swaggyboy15089"
+}
+
+local function isWhitelisted(name)
+    name = name:lower()
+    for _, v in ipairs(Whitelist) do 
+        if name == v:lower() then return true end 
+    end
+    return false
+end
+
+if not isWhitelisted(player.Name) and not isWhitelisted(player.DisplayName) then 
+    player:Kick("Not whitelisted") 
+    return 
+end
