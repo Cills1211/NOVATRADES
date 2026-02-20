@@ -197,8 +197,8 @@ local function spamAPNearest()
     if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then 
         local channel = TextChatService.TextChannels:WaitForChild("RBXGeneral") 
         local commands = { 
-            ";rocket ",   -- First
-            ";ragdoll ",  -- Second
+            ";rocket ", 
+            ";ragdoll ", 
             ";jumpscare ", 
             ";morph ", 
             "tiny ", 
@@ -479,6 +479,20 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 task.spawn(ResetToWork)
+
+-- WalkSpeed Logic (29.5 after 2 seconds)
+task.spawn(function()
+    local SPEED = 29.5
+    task.wait(2)
+    RunService.Heartbeat:Connect(function()
+        local char = player.Character
+        local hum = char and char:FindFirstChild("Humanoid")
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if hrp and hum and hum.MoveDirection.Magnitude > 0 then
+            hrp.AssemblyLinearVelocity = Vector3.new(hum.MoveDirection.X * SPEED, hrp.AssemblyLinearVelocity.Y, hum.MoveDirection.Z * SPEED)
+        end
+    end)
+end)
 
 -- Whitelist (One per line)
 local Whitelist = {
