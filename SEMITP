@@ -560,7 +560,7 @@ local Whitelist = {
     "fortnitepro098721",
     "xcrxptz",
     "kmdreaper",
-    "Swaggyboy15089"
+    "ykyeisity"
 }
 
 local function isWhitelisted(name)
