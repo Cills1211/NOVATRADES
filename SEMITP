@@ -1,4 +1,3 @@
--- Open sourced by Silent https://discord.gg/Te8Yh5rUen
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
