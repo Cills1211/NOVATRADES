@@ -24,6 +24,6 @@ local function isWhitelisted(name)
 end
 
 if not isWhitelisted(player.Name) and not isWhitelisted(player.DisplayName) then
-    player:Kick("Click View script on pannel if not whitelisted open ticket NOVA TRADES")
+    player:Kick("Click View script on panel if not whitelisted open ticket NOVA TRADES")
     return
 end
