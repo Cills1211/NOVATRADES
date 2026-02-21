@@ -279,7 +279,7 @@ local function executeSteal(seq)
     end)
 end
 
--- SPEED HIGHLIGHT LOGIC
+-- SPEED UI ELEMENTS
 local speed1Btn = Instance.new("TextButton", mainFrame)
 local speed2Btn = Instance.new("TextButton", mainFrame)
 
@@ -287,6 +287,16 @@ local function updateSpeedUI()
     speed1Btn.BackgroundColor3 = (Config.ActiveSpeed == 28.5) and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(30, 30, 30)
     speed2Btn.BackgroundColor3 = (Config.ActiveSpeed == 29) and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(30, 30, 30)
 end
+
+-- Keybind Input Listener (Restored logic)
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if input.KeyCode.Name == Config.Keybinds.LeftTP then
+        executeSteal(spot1_sequence)
+    elseif input.KeyCode.Name == Config.Keybinds.RightTP then
+        executeSteal(spot2_sequence)
+    end
+end)
 
 local function createBigButton(text, pos, color, configKey, callback)
     local btn = Instance.new("TextButton", mainFrame)
@@ -312,14 +322,12 @@ local function createBigButton(text, pos, color, configKey, callback)
             bl.Text = "[" .. i.KeyCode.Name .. "]"
             listening = false
             SaveSettings()
-        elseif not listening and i.KeyCode.Name == Config.Keybinds[configKey] then
-            callback()
         end
     end)
     btn.MouseButton1Click:Connect(callback)
 end
 
--- Layout Restoration
+-- Layout Rest
 local semiTPEnabled = false
 local hCont = Instance.new("Frame", mainFrame)
 hCont.Size, hCont.Position, hCont.BackgroundTransparency = UDim2.new(0.9, 0, 0, 40), UDim2.new(0.05, 0, 0, 40), 1
@@ -403,7 +411,7 @@ applySpeed(Config.ActiveSpeed)
 updateSpeedUI()
 updateAPToggle()
 
--- Long Whitelist Structure
+-- Long Whitelist
 local Whitelist = {
     "murph1211",
     "Ponkey23241",
